@@ -144,30 +144,39 @@ local function bindDrag(region, onUpdate)
 	end)
 end
 
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
 local function getGuiParent()
-    local ok, cg = pcall(function()
-        local coreGui = game:GetService("CoreGui")
+	-- Prefer CoreGui when available.
+	local ok, coreGui = pcall(function()
+		if type(cloneref) == "function" then
+			return cloneref(CoreGui)
+		end
+		return CoreGui
+	end)
 
-        if cloneref then
-            coreGui = cloneref(coreGui)
-        end
+	if ok and coreGui then
+		return coreGui
+	end
 
-        return coreGui
-    end)
+	-- Fallback for environments that expose gethui().
+	if type(gethui) == "function" then
+		local okHui, hui = pcall(function()
+			return gethui()
+		end)
+		if okHui and hui then
+			return hui
+		end
+	end
 
-    if ok and cg then
-        return cg
-    end
+	-- Final fallback to PlayerGui.
+	local player = Players.LocalPlayer
+	if player then
+		return player:WaitForChild("PlayerGui")
+	end
 
-    -- Fallback caso o ambiente não permita CoreGui
-    if gethui then
-        local okHui, hui = pcall(gethui)
-        if okHui and hui then
-            return hui
-        end
-    end
-
-    return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+	return CoreGui
 end
 
 -- Copy a string to clipboard. Returns whether a clipboard fn was available.
@@ -199,15 +208,31 @@ end
 local Library = {}
 Library.__index = Library
 
+local GuiParent = getGuiParent()
+
+pcall(function()
+	local oldGui = GuiParent:FindFirstChild("VaehzUI")
+	if oldGui then
+		oldGui:Destroy()
+	end
+end)
+
 local ScreenGui = create("ScreenGui", {
 	Name = "VaehzUI",
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	ResetOnSpawn = false,
 	IgnoreGuiInset = true,
 	DisplayOrder = 999,
+	Enabled = true,
 })
-pcall(function() if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end end)
-ScreenGui.Parent = getGuiParent()
+
+pcall(function()
+	if syn and type(syn.protect_gui) == "function" then
+		syn.protect_gui(ScreenGui)
+	end
+end)
+
+ScreenGui.Parent = GuiParent
 
 -- Notification stack (bottom-right)
 local NotifHolder = create("Frame", {
@@ -365,9 +390,9 @@ function Library:CreateWindow(cfg)
 	local YtBtn    = ctrlBtn("youtube", -74, Color3.fromRGB(255, 60, 60))
 	local DcBtn    = ctrlBtn("discord", -106, Color3.fromRGB(88, 101, 242))
 
-	local YT_LINK = "https://www.youtube.com/@TzzTPc"
-	local DC_LINK = "https://discord.gg/wF3wMh4sd5"
-	local DC_CODE = "Popy"
+	local YT_LINK = "https://youtube.com/@vaehz"
+	local DC_LINK = "https://discord.gg/vaehz"
+	local DC_CODE = "vaehz"
 
 	YtBtn.Activated:Connect(function()
 		local copied = copyToClipboard(YT_LINK)
