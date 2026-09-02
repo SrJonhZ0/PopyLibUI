@@ -145,11 +145,29 @@ local function bindDrag(region, onUpdate)
 end
 
 local function getGuiParent()
-	if gethui then return gethui() end
-	local ok, cg = pcall(function()
-		return (cloneref and cloneref(game:GetService("CoreGui"))) or game:GetService("CoreGui")
-	end)
-	return ok and cg or game:GetService("CoreGui")
+    local ok, cg = pcall(function()
+        local coreGui = game:GetService("CoreGui")
+
+        if cloneref then
+            coreGui = cloneref(coreGui)
+        end
+
+        return coreGui
+    end)
+
+    if ok and cg then
+        return cg
+    end
+
+    -- Fallback caso o ambiente não permita CoreGui
+    if gethui then
+        local okHui, hui = pcall(gethui)
+        if okHui and hui then
+            return hui
+        end
+    end
+
+    return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 end
 
 -- Copy a string to clipboard. Returns whether a clipboard fn was available.
@@ -348,8 +366,8 @@ function Library:CreateWindow(cfg)
 	local DcBtn    = ctrlBtn("discord", -106, Color3.fromRGB(88, 101, 242))
 
 	local YT_LINK = "https://www.youtube.com/@TzzTPc"
-	local DC_LINK = "https://discord.gg/6r68WbKz3U"
-	local DC_CODE = "6r68WbKz3U"
+	local DC_LINK = "https://discord.gg/wF3wMh4sd5"
+	local DC_CODE = "Popy"
 
 	YtBtn.Activated:Connect(function()
 		local copied = copyToClipboard(YT_LINK)
